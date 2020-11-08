@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import './widgets/new_transactions.dart';
 import './widgets/transaction_list.dart';
@@ -43,7 +46,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Transaction> _userTransactions = [
+  List<Transaction> _userTransactions = [
     // Transaction(
     //   id: 't1',
     //   title: 'New Shoes',
@@ -57,6 +60,7 @@ class _MyHomePageState extends State<MyHomePage> {
     //   date: DateTime.now(),
     // ),
   ];
+  SharedPreferences sharedPreferences;
 
   List<Transaction> get _recentTransactions {
     return _userTransactions.where((tx) {
@@ -79,6 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _userTransactions.add(newTx);
     });
+    saveData();
   }
 
   void _startAddNewTransaction(BuildContext ctx) {
@@ -97,6 +102,34 @@ class _MyHomePageState extends State<MyHomePage> {
   void _deleteTransaction(String id) {
     setState(() {
       _userTransactions.removeWhere((element) => element.id == id);
+      saveData();
+    });
+  }
+
+  @override
+  void initState() {
+    initSharedPreferences();
+    super.initState();
+  }
+
+  initSharedPreferences() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    loadData();
+  }
+
+  void saveData() {
+    List<String> spList =
+        _userTransactions.map((e) => json.encode(e.toMap())).toList();
+
+    sharedPreferences.setStringList('list', spList);
+  }
+
+  void loadData() {
+    List<String> spList = sharedPreferences.getStringList('list');
+
+    setState(() {
+      _userTransactions =
+          spList.map((e) => Transaction.fromMap(json.decode(e))).toList();
     });
   }
 
